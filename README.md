@@ -49,6 +49,7 @@ main.pyの出力オプション(複数可)
 - `--image-dir <image_dir>`: <image_dir>に検出結果画像・元画像・二値化画像を出力する.
 - `--plot`: 検出結果をブラウザで表示する.
 - `--json`: 検出結果をjsonで出力する(詳しくは[以下](#json出力について)参照).
+- `--retry-with-trim`: f01が検出できなかった場合にデータの末尾(パワー最大の列)を除外して再試行する. 時々パワー最大の部分にノイズが乗ってしまう現象の対策.
 
 
 ## json出力について
@@ -58,6 +59,10 @@ main.pyの出力オプション(複数可)
 - `quality_level`: 実験結果画像の鮮明さ. 0 ~ <`f01_moment_thresholds`の要素数> の整数で, 高いほど鮮明.
 - `status`: "OK"か"ERROR". 処理中に例外が発生した場合ERROR, 単にf01やf12が検出できなかっただけの場合はOKになる.
 - `error`: 処理中に発生した例外のエラーメッセージ.
+- `retry`: 再試行情報.
+- `retry.performed`: 再試行が行われた時true, 行われなかった時false.
+- `retry.attempts`: 行った再試行のリスト.
+- `retry.attempts[].strategy`: 行った再試行の種類.
 
 #### f01, f12該当なしの時
 
@@ -70,6 +75,10 @@ main.pyの出力オプション(複数可)
   "quality_level": 0
   "status": "OK",
   "error": null
+  "retry": {
+    "performed": false,
+    "attempts": []
+  }
 }
 ```
 
@@ -84,6 +93,10 @@ main.pyの出力オプション(複数可)
   "quality_level": 1,
   "status": "OK",
   "error": null
+  "retry": {
+    "performed": false,
+    "attempts": []
+  }
 }
 ```
 
@@ -96,6 +109,54 @@ main.pyの出力オプション(複数可)
   "quality_level": 5,
   "status": "OK",
   "error": null
+  "retry": {
+    "performed": false,
+    "attempts": []
+  }
+}
+```
+
+#### f01, f12該当なしの時(再試行あり)
+
+再試行した結果, それでも該当なしの場合もある.
+
+```
+{
+  "f01_frequency": null,
+  "f12_frequency": null,
+  "quality_level": 0
+  "status": "OK",
+  "error": null,
+  "retry": {
+    "performed": true,
+    "attempts": [
+      {
+        "strategy": "trim"
+      }
+    ]
+  }
+}
+```
+
+#### f01, f12検出成功時(再試行あり)
+
+再試行した結果, f01, f12を検出できた場合.
+
+```
+{
+  "f01_frequency": 8.029999999999967,
+  "f12_frequency": 7.849999999999971,
+  "quality_level": 5,
+  "status": "OK",
+  "error": null,
+  "retry": {
+    "performed": true,
+    "attempts": [
+      {
+        "strategy": "trim"
+      }
+    ]
+  }
 }
 ```
 
@@ -110,5 +171,9 @@ main.pyの出力オプション(複数可)
   "quality_level": null
   "status": "ERROR",
   "error": "error message"
+  "retry": {
+    "performed": false,
+    "attempts": []
+  }
 }
 ```

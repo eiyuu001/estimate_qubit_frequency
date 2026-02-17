@@ -282,11 +282,35 @@ def create_figure(data, zs=None):
     return go.Figure(**data)
 
 
-def process_data(data, conf, image_dir_base=None, plot=False, json_output=False):
+def retry_trim(data, conf):
+    conf.top_power = data['data'][0]['y'][-1]
+    data['data'][0]['y'] = data['data'][0]['y'][:-1]
+    data['data'][0]['z'] = data['data'][0]['z'][:-1]
+    return data, conf
+
+
+def process_data(
+    data,
+    conf,
+    image_dir_base=None,
+    plot=False,
+    json_output=False,
+    retry_with_trim=False,
+):
+    retry_attempts = []
+
     try:
         qubit_response = QubitResponse(
             data['data'][0]['x'], data['data'][0]['y'], data['data'][0]['z'], conf
         )
+
+        if qubit_response.f01 is None and retry_with_trim:
+            retry_attempts.append({'strategy': 'trim'})
+            data, conf = retry_trim(data, conf)
+            qubit_response = QubitResponse(
+                data['data'][0]['x'], data['data'][0]['y'], data['data'][0]['z'], conf
+            )
+
         f01 = qubit_response.f01
         f12 = qubit_response.f12
     except Exception as e:
@@ -297,6 +321,10 @@ def process_data(data, conf, image_dir_base=None, plot=False, json_output=False)
                 'quality_level': None,
                 'status': 'ERROR',
                 'error': str(e),
+                'retry': {
+                    'performed': bool(retry_attempts),
+                    'attempts': retry_attempts,
+                },
             }
             print(json.dumps(result))
             return
@@ -373,6 +401,10 @@ def process_data(data, conf, image_dir_base=None, plot=False, json_output=False)
             'quality_level': quality_level,
             'status': 'OK',
             'error': None,
+            'retry': {
+                'performed': bool(retry_attempts),
+                'attempts': retry_attempts,
+            },
         }
         print(json.dumps(result))
 
@@ -384,6 +416,7 @@ def main():
     parser.add_argument('--image-dir')
     parser.add_argument('--plot', action='store_true')
     parser.add_argument('--json', action='store_true')
+    parser.add_argument('--retry-with-trim', action='store_true')
     args = parser.parse_args()
 
     with open(args.conf_file) as f:
@@ -392,7 +425,14 @@ def main():
     with open(args.input_file) as f:
         data = json.load(f)
 
-    process_data(data, conf, args.image_dir, args.plot, args.json)
+    process_data(
+        data,
+        conf,
+        args.image_dir,
+        args.plot,
+        args.json,
+        args.retry_with_trim,
+    )
 
 
 if __name__ == '__main__':
