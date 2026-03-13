@@ -56,6 +56,7 @@ main.pyの出力オプション(複数可)
 
 - `f01_frequency`: f01の周波数(GHz).
 - `f12_frequency`: f12の周波数(GHz).
+- `f01_bottom_db`: f01のピーク下限(dB).
 - `quality_level`: 実験結果画像の鮮明さ. 0 ~ <`f01_moment_thresholds`の要素数> の整数で, 高いほど鮮明.
 - `status`: "OK"か"ERROR". 処理中に例外が発生した場合ERROR, 単にf01やf12が検出できなかっただけの場合はOKになる.
 - `error`: 処理中に発生した例外のエラーメッセージ.
@@ -72,6 +73,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": null,
   "f12_frequency": null,
+  "f01_bottom_db": null,
   "quality_level": 0
   "status": "OK",
   "error": null
@@ -90,6 +92,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": 8.85499999999995,
   "f12_frequency": null,
+  "f01_bottom_db": -35.0,
   "quality_level": 1,
   "status": "OK",
   "error": null
@@ -106,6 +109,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": 8.029999999999967,
   "f12_frequency": 7.849999999999971,
+  "f01_bottom_db": -60.0,
   "quality_level": 5,
   "status": "OK",
   "error": null
@@ -124,6 +128,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": null,
   "f12_frequency": null,
+  "f01_bottom_db": null,
   "quality_level": 0
   "status": "OK",
   "error": null,
@@ -146,6 +151,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": 8.029999999999967,
   "f12_frequency": 7.849999999999971,
+  "f01_bottom_db": -60.0,
   "quality_level": 5,
   "status": "OK",
   "error": null,
@@ -168,6 +174,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": null,
   "f12_frequency": null,
+  "f01_bottom_db": null,
   "quality_level": null
   "status": "ERROR",
   "error": "error message"

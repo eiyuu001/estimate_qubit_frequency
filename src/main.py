@@ -93,6 +93,7 @@ class QubitResponse:
         idx_x = candidates[idx_max]
 
         frequency = cast(float, self.xs[idx_x])
+        bottom_db = self.config.top_power - max_height_db
         label = cast(int, self.zs_labeled[idx_y, idx_x])
         moment = self.compute_moment(
             self.zs, self.zs_labeled, self.levers, self.y_diffs, label
@@ -105,6 +106,7 @@ class QubitResponse:
             idx_x=idx_x,
             idx_y=idx_y,
             frequency=frequency,
+            bottom_db=bottom_db,
             label=label,
             moment=moment,
             quality_level=quality_level,
@@ -255,6 +257,7 @@ class QubitResponse:
         idx_x: int
         idx_y: int
         frequency: float
+        bottom_db: float
         label: int
         moment: float
         quality_level: int
@@ -318,6 +321,7 @@ def process_data(
             result = {
                 'f01_frequency': None,
                 'f12_frequency': None,
+                'f01_bottom_db': None,
                 'quality_level': None,
                 'status': 'ERROR',
                 'error': str(e),
@@ -339,6 +343,19 @@ def process_data(
                 line_width=1,
                 line_color='red',
                 line_dash='dash',
+            )
+            fig.add_trace(
+                go.Scatter(
+                    x=[f01.frequency],
+                    y=[f01.bottom_db],
+                    mode='markers',
+                    marker=dict(
+                        color='red',
+                        size=8,
+                        symbol='x',
+                    ),
+                    showlegend=False,
+                )
             )
 
         if f12:
@@ -385,9 +402,11 @@ def process_data(
     if json_output:
         if f01:
             f01_freq = f01.frequency
+            f01_bottom_db = f01.bottom_db
             quality_level = f01.quality_level
         else:
             f01_freq = None
+            f01_bottom_db = None
             quality_level = 0
 
         if f12:
@@ -398,6 +417,7 @@ def process_data(
         result = {
             'f01_frequency': f01_freq,
             'f12_frequency': f12_freq,
+            'f01_bottom_db': f01_bottom_db,
             'quality_level': quality_level,
             'status': 'OK',
             'error': None,
