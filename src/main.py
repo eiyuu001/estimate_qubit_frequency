@@ -4,6 +4,7 @@ import dataclasses
 import functools
 import itertools
 import json
+import operator
 import os
 from typing import (
     cast,
@@ -13,6 +14,10 @@ import plotly.graph_objects as go
 import numpy as np
 import numpy.typing as npt
 import scipy.ndimage
+from representative_y import (
+    HorizontalRunLengthEstimator,
+    FirstPointMeetingWidthFromTipStrategy,
+)
 
 
 @dataclasses.dataclass
@@ -64,6 +69,10 @@ class QubitResponse:
         self.zs = np.asarray(zs, dtype=np.float64)
         self.config = config
 
+        self.peak_repr_y_strategy = FirstPointMeetingWidthFromTipStrategy(
+            HorizontalRunLengthEstimator(), min_width=2
+        )
+
         self._validate_input()
 
     @functools.cached_property
@@ -76,6 +85,32 @@ class QubitResponse:
         )
         _zs = self.remove_noise(_zs)
         return _zs
+
+    def compute_representative_y(self, target_label):
+        repr_y_min = self.zs.shape[0]
+
+        for peak in sorted(self.peaks, key=operator.attrgetter('height'), reverse=True):
+            idx_x = peak.x_start
+            idx_y = self.zs.shape[0] - peak.height
+
+            if idx_y > repr_y_min:
+                break
+
+            label = cast(int, self.zs_labeled[idx_y, idx_x])
+
+            if label != target_label:
+                continue
+
+            mask = self.zs_labeled == label
+            repr_y = self.peak_repr_y_strategy.compute_representative_y(
+                mask=mask,
+                tip_x=idx_x,
+                tip_y=idx_y,
+            )
+            if repr_y < repr_y_min:
+                repr_y_min = repr_y
+
+        return repr_y_min
 
     @functools.cached_property
     def f01(self):
@@ -93,8 +128,13 @@ class QubitResponse:
         idx_x = candidates[idx_max]
 
         frequency = cast(float, self.xs[idx_x])
-        bottom_db = self.config.top_power - max_height_db
         label = cast(int, self.zs_labeled[idx_y, idx_x])
+        repr_y = self.compute_representative_y(label)
+        if repr_y < self.zs.shape[0]:
+            repr_db = self.ys[repr_y]
+        else:
+            repr_db = self.config.top_power
+
         moment = self.compute_moment(
             self.zs, self.zs_labeled, self.levers, self.y_diffs, label
         )
@@ -106,7 +146,7 @@ class QubitResponse:
             idx_x=idx_x,
             idx_y=idx_y,
             frequency=frequency,
-            bottom_db=bottom_db,
+            repr_db=repr_db,
             label=label,
             moment=moment,
             quality_level=quality_level,
@@ -257,7 +297,7 @@ class QubitResponse:
         idx_x: int
         idx_y: int
         frequency: float
-        bottom_db: float
+        repr_db: float
         label: int
         moment: float
         quality_level: int
@@ -321,7 +361,7 @@ def process_data(
             result = {
                 'f01_frequency': None,
                 'f12_frequency': None,
-                'f01_bottom_db': None,
+                'f01_repr_db': None,
                 'quality_level': None,
                 'status': 'ERROR',
                 'error': str(e),
@@ -347,7 +387,7 @@ def process_data(
             fig.add_trace(
                 go.Scatter(
                     x=[f01.frequency],
-                    y=[f01.bottom_db],
+                    y=[f01.repr_db],
                     mode='markers',
                     marker=dict(
                         color='red',
@@ -402,11 +442,11 @@ def process_data(
     if json_output:
         if f01:
             f01_freq = f01.frequency
-            f01_bottom_db = f01.bottom_db
+            f01_repr_db = f01.repr_db
             quality_level = f01.quality_level
         else:
             f01_freq = None
-            f01_bottom_db = None
+            f01_repr_db = None
             quality_level = 0
 
         if f12:
@@ -417,7 +457,7 @@ def process_data(
         result = {
             'f01_frequency': f01_freq,
             'f12_frequency': f12_freq,
-            'f01_bottom_db': f01_bottom_db,
+            'f01_repr_db': f01_repr_db,
             'quality_level': quality_level,
             'status': 'OK',
             'error': None,

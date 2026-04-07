@@ -7,7 +7,8 @@
 5. 最も高い山の高さを検出する, その高さが`f01_height_min`未満の場合はf01該当なしとする. 山の高さは`top_power`を基準に計算する. 例えば`top_power`が0dBで山が-20dBまで伸びているとき, 山の高さは20dBになる.
 6. 山の最も高い部分の周波数をf01とする, 複数ある場合はphase shiftの絶対値が一番大きい部分を採用する.
 7. f01を含む山の一次モーメントを計算(`top_power`と各部分のパワーの差を腕の長さ, phase shiftの絶対値を1dBあたりの質量とみなす)し, その値と`f01_moment_thresholds`から`quality_level`を算出する.
-8. f01から低周波方向に走査し, `f12_distance_min` ~ `f12_distance_max` の距離(GHz)にあり, `f12_height_min` 以上の高さの山の中で最も周波数の高い山をf12とする. そのような山が存在しない場合はf12該当なしとする. 山の高さは`top_power`を基準に計算する.
+8. f01の代表dB値`f01_repr_db`を計算する. f01を含む山を各先端からdB増加方向に走査し, 山が周波数方向に幅を持ち始めるdB値を代表dB値とする.
+9. f01から低周波方向に走査し, `f12_distance_min` ~ `f12_distance_max` の距離(GHz)にあり, `f12_height_min` 以上の高さの山の中で最も周波数の高い山をf12とする. そのような山が存在しない場合はf12該当なしとする. 山の高さは`top_power`を基準に計算する.
 
 ## `quality_level`について
 
@@ -56,7 +57,7 @@ main.pyの出力オプション(複数可)
 
 - `f01_frequency`: f01の周波数(GHz).
 - `f12_frequency`: f12の周波数(GHz).
-- `f01_bottom_db`: f01のピーク下限(dB).
+- `f01_repr_db`: f01のdB代表値.
 - `quality_level`: 実験結果画像の鮮明さ. 0 ~ <`f01_moment_thresholds`の要素数> の整数で, 高いほど鮮明.
 - `status`: "OK"か"ERROR". 処理中に例外が発生した場合ERROR, 単にf01やf12が検出できなかっただけの場合はOKになる.
 - `error`: 処理中に発生した例外のエラーメッセージ.
@@ -73,7 +74,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": null,
   "f12_frequency": null,
-  "f01_bottom_db": null,
+  "f01_repr_db": null,
   "quality_level": 0
   "status": "OK",
   "error": null
@@ -92,7 +93,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": 8.85499999999995,
   "f12_frequency": null,
-  "f01_bottom_db": -35.0,
+  "f01_repr_db": -35.0,
   "quality_level": 1,
   "status": "OK",
   "error": null
@@ -109,7 +110,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": 8.029999999999967,
   "f12_frequency": 7.849999999999971,
-  "f01_bottom_db": -60.0,
+  "f01_repr_db": -60.0,
   "quality_level": 5,
   "status": "OK",
   "error": null
@@ -128,7 +129,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": null,
   "f12_frequency": null,
-  "f01_bottom_db": null,
+  "f01_repr_db": null,
   "quality_level": 0
   "status": "OK",
   "error": null,
@@ -151,7 +152,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": 8.029999999999967,
   "f12_frequency": 7.849999999999971,
-  "f01_bottom_db": -60.0,
+  "f01_repr_db": -60.0,
   "quality_level": 5,
   "status": "OK",
   "error": null,
@@ -174,7 +175,7 @@ main.pyの出力オプション(複数可)
 {
   "f01_frequency": null,
   "f12_frequency": null,
-  "f01_bottom_db": null,
+  "f01_repr_db": null,
   "quality_level": null
   "status": "ERROR",
   "error": "error message"
